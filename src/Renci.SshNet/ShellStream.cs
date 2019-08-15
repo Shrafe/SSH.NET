@@ -217,15 +217,23 @@ namespace Renci.SshNet
         {
             var i = 0;
 
-            lock (_incoming)
+            while (true)
             {
-                for (; i < count && _incoming.Count > 0; i++)
+                lock (_incoming)
                 {
-                    buffer[offset + i] = _incoming.Dequeue();
+                    for (; i < count && _incoming.Count > 0; i++)
+                    {
+                        buffer[offset + i] = _incoming.Dequeue();
+                    }
                 }
-            }
 
-            return i;
+                if (i != 0)
+                {
+                    return i;
+                }
+
+                _dataReceived.WaitOne();
+            }
         }
 
         /// <summary>
